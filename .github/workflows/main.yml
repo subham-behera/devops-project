@@ -44,9 +44,9 @@ jobs:
     # UPdate the K8s Manifest Files
     - name: Update K8s Manifests
       run: |
-        cat deploy/deployment.yaml
+        cat k8s/deployment.yaml
         sed -i "s|image: devsubham09/demo-vite:.*|image: devsubham09/demo-vite:${{ env.VERSION }}|g" deploy/deployment.yaml
-        cat deploy/deployment.yaml
+        cat k8s/deployment.yaml
 
     # Update Github
     - name: Commit the changes
@@ -54,6 +54,6 @@ jobs:
         git config --global user.email "<>"
         git config --global user.name "GitHub Actions Bot"
         git checkout main
-        git add deploy/deployment.yaml
+        git add k8s/deployment.yaml
         git commit -m "Update deploy.yaml with new image version - ${{ env.VERSION }}"
         git push origin main
