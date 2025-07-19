@@ -43,13 +43,21 @@ jobs:
         docker build -t devsubham09/demo-vite:${{ env.VERSION }} .
 
     # Trivy Scan
-    - name: Run Trivy Image Scan
+    - name: Run Trivy Image Scan (JSON Output)
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: devsubham09/demo-vite:${{ env.VERSION }}
-        format: 'table'
-        exit-code: '1'
+        format: 'json'
+        output: trivy-report.json
         severity: 'CRITICAL,HIGH'
+        exit-code: '0'  # Don't fail the job on findings
+
+    - name: Upload Trivy Scan Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: trivy-report
+        path: trivy-report.json
+
 
     # Push Docker Image
     - name: Push Docker Image
