@@ -53,7 +53,7 @@ jobs:
         exit-code: '0'  # Don't fail the job on findings
 
     - name: Upload Trivy Scan Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: trivy-report
         path: trivy-report.json
