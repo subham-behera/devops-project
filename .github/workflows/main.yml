@@ -81,7 +81,17 @@ jobs:
         git push origin main
 
     # Run TFSec on Terraform directory
-    - name: Run tfsec on Terraform code
+    - name: Run tfsec scan
       uses: aquasecurity/tfsec-action@v1.0.0
       with:
-        working_directory: ./terraform
+        working-directory: ./terraform
+        format: json
+        output: tfsec-report.json
+        soft-fail: true
+
+    - name: Upload tfsec report
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfsec-report
+        path: tfsec-report.json
+
