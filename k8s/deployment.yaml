@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: react-app
-        image: devsubham09/react-app:v1
+        image: devsubham09/demo-vite:latest
         ports:
         - containerPort: 80
