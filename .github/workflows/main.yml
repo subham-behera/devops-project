@@ -1,33 +1,36 @@
-name: Test and Build
+name: Test, Scan and Build
 
 on:
   push:
     branches:
-    - main
+      - main
     paths:
-    - '**/*'
+      - '**/*'
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  build-and-scan:
     runs-on: ubuntu-latest
 
     steps:
-    #Setting up environment
+    # Checkout code
     - name: Checkout code
       uses: actions/checkout@v2
 
+    # Setup Docker Buildx
     - name: Docker Setup
       uses: docker/setup-buildx-action@v2
 
+    # Login to Docker Hub
     - name: Docker Credentials
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
+    # Generate a timestamp-based version tag
     - name: Docker tag
       id: version
       run: |
@@ -39,24 +42,38 @@ jobs:
       run: |
         docker build -t devsubham09/demo-vite:${{ env.VERSION }} .
 
-    # Push the Docker Image
+    # Trivy Scan
+    - name: Run Trivy Image Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: devsubham09/demo-vite:${{ env.VERSION }}
+        format: 'table'
+        exit-code: '1'
+        severity: 'CRITICAL,HIGH'
+
+    # Push Docker Image
     - name: Push Docker Image
       run: |
         docker push devsubham09/demo-vite:${{ env.VERSION }}
 
-    # UPdate the K8s Manifest Files
+    # Update Kubernetes Manifest
     - name: Update K8s Manifests
       run: |
-        cat k8s/deployment.yaml
         sed -i "s|image: devsubham09/demo-vite:.*|image: devsubham09/demo-vite:${{ env.VERSION }}|g" k8s/deployment.yaml
         cat k8s/deployment.yaml
 
-    # Update Github
+    # Commit changes to GitHub
     - name: Commit the changes
       run: |
-        git config --global user.email "<>"
+        git config --global user.email "bot@github.com"
         git config --global user.name "GitHub Actions Bot"
         git checkout main
         git add k8s/deployment.yaml
-        git commit -m "Update deploy.yaml with new image version - ${{ env.VERSION }}"
+        git commit -m "CI: Update deployment.yaml with image version ${{ env.VERSION }}"
         git push origin main
+
+    # Run TFSec on Terraform directory
+    - name: Run tfsec on Terraform code
+      uses: aquasecurity/tfsec-action@v1.0.0
+      with:
+        working_directory: ./terraform
