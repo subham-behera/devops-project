@@ -69,6 +69,34 @@ jobs:
         sed -i "s|image: devsubham09/demo-vite:.*|image: devsubham09/demo-vite:${{ env.VERSION }}|g" k8s/deployment.yaml
         cat k8s/deployment.yaml
 
+    # Install kubectl and sealed secrets CLI
+    - name: Setup kubectl & kubeseal
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+        wget https://github.com/bitnami-labs/sealed-secrets/releases/latest/download/kubeseal-linux-amd64
+        chmod +x kubeseal-linux-amd64 && sudo mv kubeseal-linux-amd64 /usr/local/bin/kubeseal
+
+    # Setup Kubeconfig
+    - name: Configure Kubeconfig
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > ~/.kube/config
+
+    # Apply sealed secrets and deployment
+    - name: Apply Sealed Secrets and Deploy
+      run: |
+        kubectl apply -f k8s/sealed-secret.yaml
+        kubectl apply -f k8s/deployment.yaml
+
+    # Upload sealed secret artifact
+    - name: Upload sealed secret artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sealed-secret
+        path: k8s/sealed-secret.yaml
+
     # Commit changes to GitHub
     - name: Commit the changes
       run: |
